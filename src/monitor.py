@@ -19,11 +19,11 @@ faceCascade = cv2.CascadeClassifier('../model/haarcascade_frontalface_alt.xml')
 
 MODEL_MEAN_VALUES = (78.4263377603, 87.7689143744, 114.895847746)
 age_list = ['(0, 10)', '(11, 15)', '(16, 25)', '(26, 35)', '(26, 35)', '(36, 45)', '(46, 60)', '(60, 100)']
-gender_list = ['Male', 'Female']
+gender_list = ['Female','Male']
 
 #The deisred output width and height
-OUTPUT_SIZE_WIDTH = 640
-OUTPUT_SIZE_HEIGHT = 430
+OUTPUT_SIZE_WIDTH = 800
+OUTPUT_SIZE_HEIGHT = 640
 
 
 #We are not doing really face recognition
@@ -60,6 +60,7 @@ def detectAndTrackMultipleFaces():
     faceTrackers = {}
     faceNames = {}
     peopleInfo = {}
+    timeInfo = {}
 
     try:
         while True:
@@ -119,6 +120,7 @@ def detectAndTrackMultipleFaces():
                 print("Removing fid " + str(fid) + " from list of trackers")
                 faceTrackers.pop( fid , None )
                 peopleInfo.pop(fid, None)
+                timeInfo.pop(fid, None)
 
 
 
@@ -223,7 +225,7 @@ def detectAndTrackMultipleFaces():
                         faceTrackers[ currentFaceID ] = tracker
 
                         peopleInfo[currentFaceID] = (age, gender)
-
+                        timeInfo[currentFaceID] = round(time.time(),3)
                         #Start a new thread that is used to simulate 
                         #face recognition. This is not yet implemented in this
                         #version :)
@@ -260,15 +262,18 @@ def detectAndTrackMultipleFaces():
                                 (int(t_x + t_w/2), int(t_y)), 
                                 cv2.FONT_HERSHEY_SIMPLEX,
                                 0.5, (255, 255, 255), 2)
+                    (age, gender) = peopleInfo[fid]
+                    age_gender_text = "%s %s" % (gender, age)
+                    currTime = round(time.time(),3)
+                    time_text = 'appear time:{} s'.format(round(currTime-timeInfo[fid],3))
+                    
+                    cv2.putText(resultImage, age_gender_text, (int(t_x + t_w/2), int(t_y+20)), cv2.FONT_HERSHEY_SIMPLEX, .5, (255, 255, 255), 1)
+                    cv2.putText(resultImage, time_text, (int(t_x + t_w/2), int(t_y+40)), cv2.FONT_HERSHEY_SIMPLEX, .5, (255, 255, 255), 1)
                 else:
                     cv2.putText(resultImage, "Detecting..." , 
                                 (int(t_x + t_w/2), int(t_y)), 
                                 cv2.FONT_HERSHEY_SIMPLEX,
                                 0.5, (255, 255, 255), 2)
-
-                (age, gender) = peopleInfo[fid]
-                overlay_text = "%s %s" % (gender, age)
-                cv2.putText(resultImage, overlay_text, (int(t_x + t_w/2), int(t_y+20)), cv2.FONT_HERSHEY_SIMPLEX, .5, (255, 255, 255), 1)
 
 
 

@@ -6,10 +6,9 @@
 #Import the OpenCV and dlib libraries
 import cv2
 import dlib
-
-
 import threading
 import time
+import requests
 
 #Initialize a face cascade using the frontal face haar cascade provided with
 #the OpenCV library
@@ -19,11 +18,14 @@ faceCascade = cv2.CascadeClassifier('../model/haarcascade_frontalface_alt.xml')
 
 MODEL_MEAN_VALUES = (78.4263377603, 87.7689143744, 114.895847746)
 age_list = ['(0, 10)', '(11, 15)', '(16, 25)', '(26, 35)', '(26, 35)', '(36, 45)', '(46, 60)', '(60, 100)']
-gender_list = ['Female','Male']
+gender_list = ['Male','Female']
 
 #The deisred output width and height
-OUTPUT_SIZE_WIDTH = 800
-OUTPUT_SIZE_HEIGHT = 640
+OUTPUT_SIZE_WIDTH = 500
+OUTPUT_SIZE_HEIGHT = 380
+
+fileName = '../data/'+str(int(time.time()))+'.txt'
+writingFile = open(fileName,'w')
 
 
 #We are not doing really face recognition
@@ -31,7 +33,12 @@ def doRecognizePerson(faceNames, fid):
     time.sleep(2)
     faceNames[ fid ] = "Person " + str(fid)
 
-
+def postData(str):
+    # parse the string
+    arr = str.split(' ')
+    data = {'personId':arr[1], 'time':arr[2], 'age':arr[3]+arr[4], 'gender':arr[5]}
+    r = requests.post("http://127.0.0.1:5000/peopleInfo", data=data)
+    print(r.text)
 
 
 def detectAndTrackMultipleFaces():
@@ -112,15 +119,27 @@ def detectAndTrackMultipleFaces():
 
                 #If the tracking quality is good enough, we must delete
                 #this tracker
-                if trackingQuality < 7:
+                if trackingQuality < 6:
                     fidsToDelete.append( fid )
                     peopleToDelete.append(fid)
 
             for fid in fidsToDelete:
+                # when track lost, save info before remoce
+                try:
+                    
+                    currTime = round(time.time(),3)
+                    info_to_write = faceNames[fid] + ' ' + str(round(currTime-timeInfo[fid],3)) + ' ' + peopleInfo[fid][0] + ' '+peopleInfo[fid][1]
+                    postData(info_to_write)
+                    writingFile.write(info_to_write+' \n')
+                except Exception as e:
+                    print(e)
+                
+
                 print("Removing fid " + str(fid) + " from list of trackers")
                 faceTrackers.pop( fid , None )
                 peopleInfo.pop(fid, None)
                 timeInfo.pop(fid, None)
+
 
 
 
